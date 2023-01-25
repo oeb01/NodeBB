@@ -20,6 +20,7 @@ const user_1 = __importDefault(require("../user"));
 const plugins_1 = __importDefault(require("../plugins"));
 const categories_1 = __importDefault(require("../categories"));
 const utils_1 = __importDefault(require("../utils"));
+// import { Posts } from ;
 module.exports = function (Posts) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     Posts.getPostSummaryByPids = function (pids, uid, options) {
@@ -40,7 +41,7 @@ module.exports = function (Posts) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             posts = posts.filter(Boolean);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            posts = yield user_1.default.blocks.filter(uid, posts);
+            posts = (yield user_1.default.blocks.filter(uid, posts));
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const uids = lodash_1.default.uniq(posts.map(p => p && p.uid));
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call

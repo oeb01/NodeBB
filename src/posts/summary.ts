@@ -11,6 +11,8 @@ import plugins from '../plugins';
 import categories from '../categories';
 import utils from '../utils';
 
+// import { Posts } from ;
+
 module.exports = function (Posts) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     Posts.getPostSummaryByPids = async function (pids, uid, options) {
@@ -29,11 +31,11 @@ module.exports = function (Posts) {
         const fields = ['pid', 'tid', 'content', 'uid', 'timestamp', 'deleted', 'upvotes', 'downvotes', 'replies', 'handle'].concat(options.extraFields);
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        let posts = await Posts.getPostsFields(pids, fields);
+        let posts = await Posts.getPostsFields(pids, fields) as any[];
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         posts = posts.filter(Boolean);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        posts = await user.blocks.filter(uid, posts);
+        posts = await user.blocks.filter(uid, posts) as any[];
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         const uids = _.uniq(posts.map(p => p && p.uid));
