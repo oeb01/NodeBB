@@ -1,15 +1,15 @@
 
 // 'use strict';
 
-const validator = require('validator');
+import validator from 'validator';
 
-const ul = require('lodash');
+import _ from 'lodash';
 
-const topics = require('../topics');
-const user = require('../user');
-const plugins = require('../plugins');
-const categories = require('../categories');
-const utils = require('../utils');
+import topics from '../topics';
+import user from '../user';
+import plugins from '../plugins';
+import categories from '../categories';
+import utils from '../utils';
 
 module.exports = function (Posts) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -36,15 +36,40 @@ module.exports = function (Posts) {
         posts = await user.blocks.filter(uid, posts);
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const uids = ul.uniq(posts.map(p => p && p.uid));
+        const uids = _.uniq(posts.map(p => p && p.uid));
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const tids = ul.uniq(posts.map(p => p && p.tid));
+        const tids = _.uniq(posts.map(p => p && p.tid));
+
+        async function getTopicAndCategories(tids) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            const topicsData = await topics.getTopicsFields(tids, [
+                'uid', 'tid', 'title', 'cid', 'tags', 'slug',
+                'deleted', 'scheduled', 'postcount', 'mainPid', 'teaserPid',
+            ]);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            const cids = _.uniq(topicsData.map(topic => topic && topic.cid));
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            const categoriesData: string[] = await categories.getCategoriesFields(cids, [
+                'cid', 'name', 'icon', 'slug', 'parentCid',
+                'bgColor', 'color', 'backgroundImage', 'imageClass',
+            ]) as string[];
+            return { topics: topicsData, categories: categoriesData };
+        }
 
         const [users, topicsAndCategories] = await Promise.all([
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             user.getUsersFields(uids, ['uid', 'username', 'userslug', 'picture', 'status']),
             getTopicAndCategories(tids),
         ]);
+        function toObject(key, data) {
+            const obj = {};
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            for (let i = 0; i < data.length; i += 1) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                obj[data[i][key]] = data[i];
+            }
+            return obj;
+        }
 
         const uidToUser = toObject('uid', users);
         const tidToTopic = toObject('tid', topicsAndCategories.topics);
@@ -107,33 +132,7 @@ module.exports = function (Posts) {
         }));
     }
 
-    async function getTopicAndCategories(tids) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const topicsData = await topics.getTopicsFields(tids, [
-            'uid', 'tid', 'title', 'cid', 'tags', 'slug',
-            'deleted', 'scheduled', 'postcount', 'mainPid', 'teaserPid',
-        ]);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const cids = ul.uniq(topicsData.map(topic => topic && topic.cid));
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const categoriesData = await categories.getCategoriesFields(cids, [
-            'cid', 'name', 'icon', 'slug', 'parentCid',
-            'bgColor', 'color', 'backgroundImage', 'imageClass',
-        ]);
-        return { topics: topicsData, categories: categoriesData };
-    }
-
-    function toObject(key, data) {
-        const obj = {};
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        for (let i = 0; i < data.length; i += 1) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            obj[data[i][key]] = data[i];
-        }
-        return obj;
-    }
-
-    function stripTags(content) {
+    function stripTags(content:string) {
         if (content) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             return utils.stripHTMLTags(content, utils.stripTags);
