@@ -29,11 +29,11 @@ module.exports = function (Posts) {
                 return [];
             }
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            options.stripTags = options.hasOwnProperty('stripTags') ? options.stripTags : false;
+            options.stripTags = (options.hasOwnProperty('stripTags') ? options.stripTags : false);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            options.parse = options.hasOwnProperty('parse') ? options.parse : true;
+            options.parse = (options.hasOwnProperty('parse') ? options.parse : true);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            options.extraFields = options.hasOwnProperty('extraFields') ? options.extraFields : [];
+            options.extraFields = (options.hasOwnProperty('extraFields') ? options.extraFields : []);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const fields = ['pid', 'tid', 'content', 'uid', 'timestamp', 'deleted', 'upvotes', 'downvotes', 'replies', 'handle'].concat(options.extraFields);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -143,4 +143,5 @@ module.exports = function (Posts) {
         }
         return content;
     }
+    // Unsafe assignment of an `any` value means u should define type on the right side of the variable assignment
 };

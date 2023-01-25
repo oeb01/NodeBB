@@ -21,11 +21,11 @@ module.exports = function (Posts) {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        options.stripTags = options.hasOwnProperty('stripTags') ? options.stripTags : false;
+        options.stripTags = (options.hasOwnProperty('stripTags') ? options.stripTags : false) as boolean;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        options.parse = options.hasOwnProperty('parse') ? options.parse : true;
+        options.parse = (options.hasOwnProperty('parse') ? options.parse : true) as boolean;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        options.extraFields = options.hasOwnProperty('extraFields') ? options.extraFields : [];
+        options.extraFields = (options.hasOwnProperty('extraFields') ? options.extraFields : []) as boolean;
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         const fields = ['pid', 'tid', 'content', 'uid', 'timestamp', 'deleted', 'upvotes', 'downvotes', 'replies', 'handle'].concat(options.extraFields);
@@ -40,22 +40,22 @@ module.exports = function (Posts) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         const uids = _.uniq(posts.map(p => p && p.uid));
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const tids = _.uniq(posts.map(p => p && p.tid));
+        const tids: number[] = _.uniq(posts.map(p => p && p.tid)) as number[];
 
-        async function getTopicAndCategories(tids) {
+        async function getTopicAndCategories(tids: number[]) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            const topicsData = await topics.getTopicsFields(tids, [
+            const topicsData: any[] = await topics.getTopicsFields(tids, [
                 'uid', 'tid', 'title', 'cid', 'tags', 'slug',
                 'deleted', 'scheduled', 'postcount', 'mainPid', 'teaserPid',
             ]);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            const cids = _.uniq(topicsData.map(topic => topic && topic.cid));
+            const cids: string[] = _.uniq(topicsData.map(topic => topic && topic.cid));
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const categoriesData: string[] = await categories.getCategoriesFields(cids, [
                 'cid', 'name', 'icon', 'slug', 'parentCid',
                 'bgColor', 'color', 'backgroundImage', 'imageClass',
             ]) as string[];
-            return { topics: topicsData, categories: categoriesData };
+            return { topics: topicsData, categories: categoriesData } ;
         }
 
         const [users, topicsAndCategories] = await Promise.all([
@@ -68,7 +68,7 @@ module.exports = function (Posts) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             for (let i = 0; i < data.length; i += 1) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                obj[data[i][key]] = data[i];
+                obj[data[i][key]] = data[i] as string;
             }
             return obj;
         }
@@ -82,26 +82,26 @@ module.exports = function (Posts) {
             // If the post author isn't represented in the retrieved users' data,
             // then it means they were deleted, assume guest.
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (!uidToUser.hasOwnProperty(post.uid)) {
+            if (!uidToUser.hasOwnProperty(post.uid as number)) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 post.uid = 0;
             }
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post.user = uidToUser[post.uid];
+            post.user = uidToUser[post.uid] as string;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             Posts.overrideGuestHandle(post, post.handle);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             post.handle = undefined;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post.topic = tidToTopic[post.tid];
+            post.topic = tidToTopic[post.tid] as string;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post.category = post.topic && cidToCategory[post.topic.cid];
+            post.category = post.topic && cidToCategory[post.topic.cid] as string;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             post.isMainPost = post.topic && post.pid === post.topic.mainPid;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             post.deleted = post.deleted === 1;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post.timestampISO = utils.toISOString(post.timestamp);
+            post.timestampISO = utils.toISOString(post.timestamp) as string;
         });
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -141,4 +141,5 @@ module.exports = function (Posts) {
         }
         return content;
     }
+    // Unsafe assignment of an `any` value means u should define type on the right side of the variable assignment
 };
