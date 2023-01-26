@@ -1,5 +1,4 @@
 "use strict";
-// 'use strict';
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -13,6 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// 'use strict';
+// 'Unsafe assignment of an `any` value' means u should define type on the right side of the variable assignment
 const validator_1 = __importDefault(require("validator"));
 const lodash_1 = __importDefault(require("lodash"));
 const topics_1 = __importDefault(require("../topics"));
@@ -111,10 +112,18 @@ module.exports = function (Posts) {
             posts = yield parsePosts(posts, options);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const result = yield plugins_1.default.hooks.fire('filter:post.getPostSummaryByPids', { posts: posts, uid: uid });
+            // i think result is a dictionary?
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             return result.posts;
         });
     };
+    function stripTags(content) {
+        if (content) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            return utils_1.default.stripHTMLTags(content, utils_1.default.stripTags);
+        }
+        return content;
+    }
     function parsePosts(posts, options) {
         return __awaiter(this, void 0, void 0, function* () {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -122,11 +131,12 @@ module.exports = function (Posts) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 if (!post.content || !options.parse) {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                    post.content = post.content ? validator_1.default.escape(String(post.content)) : post.content;
+                    post.content = (post.content ? validator_1.default.escape(String(post.content)) : post.content);
                     return post;
                 }
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                post = yield Posts.parsePost(post);
+                post = (yield Posts.parsePost(post));
+                // im not sure what type post should be defined as, i think it is a dictionary
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 if (options.stripTags) {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -136,12 +146,4 @@ module.exports = function (Posts) {
             })));
         });
     }
-    function stripTags(content) {
-        if (content) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            return utils_1.default.stripHTMLTags(content, utils_1.default.stripTags);
-        }
-        return content;
-    }
-    // Unsafe assignment of an `any` value means u should define type on the right side of the variable assignment
 };

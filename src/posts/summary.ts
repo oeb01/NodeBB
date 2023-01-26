@@ -1,6 +1,6 @@
 
 // 'use strict';
-
+// 'Unsafe assignment of an `any` value' means u should define type on the right side of the variable assignment
 import validator from 'validator';
 
 import _ from 'lodash';
@@ -28,7 +28,7 @@ module.exports = function (Posts) {
         options.extraFields = (options.hasOwnProperty('extraFields') ? options.extraFields : []) as boolean;
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const fields = ['pid', 'tid', 'content', 'uid', 'timestamp', 'deleted', 'upvotes', 'downvotes', 'replies', 'handle'].concat(options.extraFields);
+        const fields = ['pid', 'tid', 'content', 'uid', 'timestamp', 'deleted', 'upvotes', 'downvotes', 'replies', 'handle'].concat(options.extraFields as ConcatArray<string>);
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         let posts = await Posts.getPostsFields(pids, fields) as any[];
@@ -47,15 +47,15 @@ module.exports = function (Posts) {
             const topicsData: any[] = await topics.getTopicsFields(tids, [
                 'uid', 'tid', 'title', 'cid', 'tags', 'slug',
                 'deleted', 'scheduled', 'postcount', 'mainPid', 'teaserPid',
-            ]);
+            ]) as string[];
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            const cids: string[] = _.uniq(topicsData.map(topic => topic && topic.cid));
+            const cids: number[] = _.uniq(topicsData.map(topic => topic && topic.cid) );
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const categoriesData: string[] = await categories.getCategoriesFields(cids, [
                 'cid', 'name', 'icon', 'slug', 'parentCid',
                 'bgColor', 'color', 'backgroundImage', 'imageClass',
             ]) as string[];
-            return { topics: topicsData, categories: categoriesData } ;
+            return { topics: topicsData, categories: categoriesData };
         }
 
         const [users, topicsAndCategories] = await Promise.all([
@@ -110,30 +110,10 @@ module.exports = function (Posts) {
         posts = await parsePosts(posts, options);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         const result = await plugins.hooks.fire('filter:post.getPostSummaryByPids', { posts: posts, uid: uid });
+        // i think result is a dictionary?
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return result.posts;
     };
-
-    async function parsePosts(posts, options) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        return await Promise.all(posts.map(async (post) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (!post.content || !options.parse) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                post.content = post.content ? validator.escape(String(post.content)) : post.content;
-                return post;
-            }
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post = await Posts.parsePost(post);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (options.stripTags) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                post.content = stripTags(post.content);
-            }
-            return post;
-        }));
-    }
-
     function stripTags(content:string) {
         if (content) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -141,5 +121,25 @@ module.exports = function (Posts) {
         }
         return content;
     }
-    // Unsafe assignment of an `any` value means u should define type on the right side of the variable assignment
+
+    async function parsePosts(posts, options) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        return await Promise.all(posts.map(async (post) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            if (!post.content || !options.parse) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                post.content = (post.content ? validator.escape(String(post.content)) : post.content) as boolean;
+                return post;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            post = await Posts.parsePost(post) as any[];
+            // im not sure what type post should be defined as, i think it is a dictionary
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            if (options.stripTags) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                post.content = stripTags(post.content as string);
+            }
+            return post;
+        }));
+    }
 };
