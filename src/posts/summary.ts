@@ -9,9 +9,7 @@ import plugins from '../plugins';
 import categories from '../categories';
 import utils from '../utils';
 
-import { CategoryObject } from './category';
-import { UserObjectSlim } from './user';
-import { PostObject } from '../types';
+import { CategoryObject, PostObject, TagObject } from '../types';
 
 interface PostObjectNew extends PostObject {
     handle;
@@ -23,10 +21,49 @@ interface Posts {
     overrideGuestHandle(postData, handle),
     parsePost: (post: PostObject) => Promise<PostObject>;
 }
-
-
+type TopicObject = {
+    map(arg0: (topic: TopicObject) => number): _.List<unknown>;
+    uid: number,
+    tid: number,
+    title: string,
+    cid: number,
+    tags: TagObject[],
+    slug: string,
+    deleted: string,
+    scheduled: string,
+    postcount: string,
+    mainPid: number,
+    teaserPid: number | string;
+};
 
 export = function (Posts: Posts) {
+    function stripTags(content:string) {
+        if (content) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            return utils.stripHTMLTags(content, utils.stripTags);
+        }
+        return content;
+    }
+    async function parsePosts(posts: PostObject[], options) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        return await Promise.all(posts.map(async (post) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            if (!post.content || !options.parse) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                post.content = (post.content ? validator.escape(String(post.content)) : post.content) as string;
+                return post;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            post = await Posts.parsePost(post);
+            // im not sure what type post should be defined as, i think it is a dictionary
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            if (options.stripTags) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                post.content = stripTags(post.content);
+            }
+            return post;
+        }));
+    }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     Posts.getPostSummaryByPids = async function (pids, uid, options) {
         if (!Array.isArray(pids) || !pids.length) {
@@ -58,12 +95,12 @@ export = function (Posts: Posts) {
 
         async function getTopicAndCategories(tids: number[]) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            const topicsData: any[] = await topics.getTopicsFields(tids, [
+            const topicsData: TopicObject = await topics.getTopicsFields(tids, [
                 'uid', 'tid', 'title', 'cid', 'tags', 'slug',
                 'deleted', 'scheduled', 'postcount', 'mainPid', 'teaserPid',
-            ]) as string[];
+            ]) as TopicObject;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            const cids = _.uniq(topicsData.map(topic => topic && topic.cid as number));
+            const cids = _.uniq(topicsData.map(topic => topic && topic.cid));
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const categoriesData: string[] = await categories.getCategoriesFields(cids, [
                 'cid', 'name', 'icon', 'slug', 'parentCid',
@@ -101,7 +138,7 @@ export = function (Posts: Posts) {
                 post.uid = 0;
             }
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post.user = uidToUser[post.uid] as UserObjectSlim;
+            post.user = uidToUser[post.uid];
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             Posts.overrideGuestHandle(post, post.handle);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -109,7 +146,7 @@ export = function (Posts: Posts) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             post.topic = tidToTopic[post.tid];
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post.category = post.topic && cidToCategory[post.topic.cid] as CategoryObject;
+            post.category = (post.topic && cidToCategory[post.topic.cid]) as CategoryObject;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             post.isMainPost = post.topic && post.pid === post.topic.mainPid;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -123,37 +160,9 @@ export = function (Posts: Posts) {
 
         posts = await parsePosts(posts, options);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const result = await plugins.hooks.fire('filter:post.getPostSummaryByPids', { posts: posts, uid: uid });
+        const result: {posts: PostObject[]} = await plugins.hooks.fire('filter:post.getPostSummaryByPids', { posts: posts, uid: uid as number });
         // i think result is a dictionary?
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return result.posts;
     };
-    function stripTags(content:string) {
-        if (content) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            return utils.stripHTMLTags(content, utils.stripTags);
-        }
-        return content;
-    }
-
-    async function parsePosts(posts: PostObject[], options) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        return await Promise.all(posts.map(async (post) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (!post.content || !options.parse) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                post.content = (post.content ? validator.escape(String(post.content)) : post.content) as string;
-                return post;
-            }
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            post = await Posts.parsePost(post);
-            // im not sure what type post should be defined as, i think it is a dictionary
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            if (options.stripTags) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                post.content = stripTags(post.content);
-            }
-            return post;
-        }));
-    }
 };

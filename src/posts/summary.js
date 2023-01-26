@@ -21,6 +21,35 @@ const plugins_1 = __importDefault(require("../plugins"));
 const categories_1 = __importDefault(require("../categories"));
 const utils_1 = __importDefault(require("../utils"));
 module.exports = function (Posts) {
+    function stripTags(content) {
+        if (content) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            return utils_1.default.stripHTMLTags(content, utils_1.default.stripTags);
+        }
+        return content;
+    }
+    function parsePosts(posts, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            return yield Promise.all(posts.map((post) => __awaiter(this, void 0, void 0, function* () {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+                if (!post.content || !options.parse) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                    post.content = (post.content ? validator_1.validator.escape(String(post.content)) : post.content);
+                    return post;
+                }
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+                post = yield Posts.parsePost(post);
+                // im not sure what type post should be defined as, i think it is a dictionary
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+                if (options.stripTags) {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    post.content = stripTags(post.content);
+                }
+                return post;
+            })));
+        });
+    }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     Posts.getPostSummaryByPids = function (pids, uid, options) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -99,7 +128,7 @@ module.exports = function (Posts) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 post.topic = tidToTopic[post.tid];
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                post.category = post.topic && cidToCategory[post.topic.cid];
+                post.category = (post.topic && cidToCategory[post.topic.cid]);
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 post.isMainPost = post.topic && post.pid === post.topic.mainPid;
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -117,33 +146,4 @@ module.exports = function (Posts) {
             return result.posts;
         });
     };
-    function stripTags(content) {
-        if (content) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            return utils_1.default.stripHTMLTags(content, utils_1.default.stripTags);
-        }
-        return content;
-    }
-    function parsePosts(posts, options) {
-        return __awaiter(this, void 0, void 0, function* () {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            return yield Promise.all(posts.map((post) => __awaiter(this, void 0, void 0, function* () {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                if (!post.content || !options.parse) {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                    post.content = (post.content ? validator_1.validator.escape(String(post.content)) : post.content);
-                    return post;
-                }
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                post = yield Posts.parsePost(post);
-                // im not sure what type post should be defined as, i think it is a dictionary
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                if (options.stripTags) {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    post.content = stripTags(post.content);
-                }
-                return post;
-            })));
-        });
-    }
 };
