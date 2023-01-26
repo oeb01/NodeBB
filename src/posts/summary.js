@@ -11,17 +11,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-Object.defineProperty(exports, "__esModule", { value: true });
 // 'use strict';
 // 'Unsafe assignment of an `any` value' means u should define type on the right side of the variable assignment
-const validator_1 = __importDefault(require("validator"));
+const validator_1 = require("validator");
 const lodash_1 = __importDefault(require("lodash"));
 const topics_1 = __importDefault(require("../topics"));
 const user_1 = __importDefault(require("../user"));
 const plugins_1 = __importDefault(require("../plugins"));
 const categories_1 = __importDefault(require("../categories"));
 const utils_1 = __importDefault(require("../utils"));
-// import { Posts } from ;
 module.exports = function (Posts) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     Posts.getPostSummaryByPids = function (pids, uid, options) {
@@ -39,12 +37,14 @@ module.exports = function (Posts) {
             const fields = ['pid', 'tid', 'content', 'uid', 'timestamp', 'deleted', 'upvotes', 'downvotes', 'replies', 'handle'].concat(options.extraFields);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             let posts = yield Posts.getPostsFields(pids, fields);
+            // i think getPostsFields returns a dictionary?? not sure how to define that
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             posts = posts.filter(Boolean);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             posts = (yield user_1.default.blocks.filter(uid, posts));
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const uids = lodash_1.default.uniq(posts.map(p => p && p.uid));
+            // is it because .map returns an any typed value?
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const tids = lodash_1.default.uniq(posts.map(p => p && p.tid));
             function getTopicAndCategories(tids) {
@@ -103,7 +103,7 @@ module.exports = function (Posts) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 post.isMainPost = post.topic && post.pid === post.topic.mainPid;
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                post.deleted = post.deleted === 1;
+                post.deleted = post.deleted === true;
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 post.timestampISO = utils_1.default.toISOString(post.timestamp);
             });
@@ -131,11 +131,11 @@ module.exports = function (Posts) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 if (!post.content || !options.parse) {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                    post.content = (post.content ? validator_1.default.escape(String(post.content)) : post.content);
+                    post.content = (post.content ? validator_1.validator.escape(String(post.content)) : post.content);
                     return post;
                 }
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-                post = (yield Posts.parsePost(post));
+                post = yield Posts.parsePost(post);
                 // im not sure what type post should be defined as, i think it is a dictionary
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                 if (options.stripTags) {
